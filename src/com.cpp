@@ -44,18 +44,18 @@ void help() {
                  "firefox, games, calc, store, social, mkusr, ip, internet speed\n";
 }
 }
-int run_shell() {
+ShellResult run_shell() {
     banner();
     std::string user = "MyOs user";
     for (;;) {
         std::cout << "\n>>> ";
         std::string command;
-        if (!std::getline(std::cin, command)) return 0;
+        if (!std::getline(std::cin, command)) return ShellResult::Shutdown;
         command = trim(command);
         try {
             if (command.empty()) continue;
-            if (command == "quit") return 0;
-            if (command == "reboot") { banner(); continue; }
+            if (command == "quit") return ShellResult::Shutdown;
+            if (command == "reboot") return ShellResult::Reboot;
             if (command == "help") { help(); continue; }
             if (command == "clear") { std::cout << "\033[2J\033[H"; continue; }
             if (command == "whoami") { std::cout << user << '\n'; continue; }
