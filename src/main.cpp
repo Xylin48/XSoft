@@ -1,18 +1,16 @@
 #include "com.hpp"
 #include "filesystem.hpp"
+#include "storage.hpp"
 #include "users.hpp"
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
-int main() {
+int main(int argc,char** argv) {
  try {
-  // A portable installation: the xsoft/C drive lives in the launch directory.
-  const auto root=std::filesystem::current_path()/"xsoft"/"C";
+  (void)argc;
+  const auto root=myos::drive_directory(argv[0]);
   myos::Drive drive(root);
-  std::filesystem::create_directories(drive.root()/"MyOs"/"System"/"Accounts");
-  std::filesystem::create_directories(drive.root()/"Users");
-  std::filesystem::create_directories(drive.root()/"Program Files");
-  std::filesystem::create_directories(drive.root()/"Temp");
+  myos::initialize_drive(drive.root());
   myos::Users users(drive.root()/"MyOs"/"System"/"Accounts");
   for(;;) {
    drive.reset();
