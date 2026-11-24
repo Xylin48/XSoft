@@ -68,7 +68,7 @@ ShellResult run_shell(Users& users,Drive& drive) {
    try {
     const auto id=command.substr(10);
     if(!xse::valid_id(id)) throw std::runtime_error("Invalid application identifier");
-    const auto target=drive.executable("C:/Apps/"+id+".xse",false);
+    const auto target=drive.executable("C:/apps/"+id+".xse",false);
     if(!std::filesystem::remove(target)) throw std::runtime_error("Removal failed");
     std::cout<<"Removed "<<id<<".xse\n";
    } catch(const std::exception& e) { std::cout<<"Removal failed: "<<e.what()<<'\n'; }
@@ -76,7 +76,7 @@ ShellResult run_shell(Users& users,Drive& drive) {
   }
   if(command=="apps") {
    try {
-    const auto apps=xse::installed_packages(drive.root()/"Apps");
+    const auto apps=xse::installed_packages(drive.root()/"apps");
     for(const auto& app:apps) std::cout<<app.id<<'\n';
     if(apps.empty()) std::cout<<"No installed XSE applications.\n";
    } catch(const std::exception& e) { std::cout<<"Application discovery failed: "<<e.what()<<'\n'; }
