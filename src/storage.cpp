@@ -45,7 +45,7 @@ void initialize_drive(const fs::path& root) {
  // Do not follow pre-existing symlinks for any system directory.
  for(const auto& relative:{fs::path("MyOs"),fs::path("MyOs/System"),
      fs::path("MyOs/System/Accounts"),fs::path("Users"),
-     fs::path("Program Files"),fs::path("Temp")}) {
+     fs::path("Program Files"),fs::path("Temp"),fs::path("apps")}) {
   const auto path=root/relative;
   if(fs::is_symlink(fs::symlink_status(path)))
    throw std::runtime_error("XSoft system directory is a symlink: "+path.string());
