@@ -15,7 +15,7 @@ inline xse::InstallResult download(const fs::path& root,const std::string& id) {
   if(native_xse::process("git",{"clone","--depth","1","--single-branch","--branch",id,"--","https://github.com/Xylin48/Store.git",source.string()})!=0)
    throw std::runtime_error("Store download failed");
   fs::remove_all(source/".git");
-  auto result=native_xse::install_source(root/"Apps",id,source);
+  auto result=native_xse::install_source(root/"apps",id,source);
   std::error_code cleanup; fs::remove_all(stage,cleanup);
   if(cleanup && !result.cleanup_error) result.cleanup_error=cleanup;
   return result;
