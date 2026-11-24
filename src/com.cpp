@@ -5,7 +5,6 @@
 #include "tictactoe.hpp"
 #include "packages.hpp"
 #include "native_xse.hpp"
-#include "store.hpp"
 #include <iostream>
 #include <string>
 namespace myos {
@@ -45,23 +44,12 @@ ShellResult run_shell(Users& users,Drive& drive) {
   }
   const bool run_command=command.rfind("run ",0)==0;
   const bool direct_xse=command.size()>4 && command.substr(command.size()-4)==".xse";
-  if(run_command || direct_xse) {
+  if(run_command || direct_xse || command=="store") {
    try {
-    const auto target=drive.executable(run_command?command.substr(4):command,run_command);
+    const auto target=drive.executable(run_command?command.substr(4):command,run_command || command=="store");
     const int status=native_xse::launch(target);
     if(status!=0) std::cout<<"Application exit code: "<<status<<'\n';
    } catch(const std::exception& e) { std::cout<<"Launch failed: "<<e.what()<<'\n'; }
-   continue;
-  }
-  if(command=="store" || command.rfind("store ",0)==0) {
-   try {
-    std::string id;
-    if(command=="store") { std::cout<<"Application name (blank to cancel): "<<std::flush; if(!std::getline(std::cin,id)||id.empty()) continue; }
-    else id=command.substr(6);
-    auto result=store::download(drive.root(),id);
-    std::cout<<"Installed "<<id<<".xse\n";
-    if(result.cleanup_error) std::cout<<"Temporary cleanup failed: "<<result.cleanup_error.message()<<'\n';
-   } catch(const std::exception& e) { std::cout<<"Store error: "<<e.what()<<'\n'; }
    continue;
   }
   if(command.rfind("uninstall ",0)==0) {
