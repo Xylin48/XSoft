@@ -77,6 +77,18 @@ fs::path Drive::resolve(const std::string& input) const {
  }
  return target;
 }
+fs::path Drive::executable(const std::string& name,bool search) const {
+ if(name.empty()) throw std::runtime_error("Executable name required");
+ auto file=name;
+ if(fs::path(file).extension()!=".xse") file+=".xse";
+ auto target=resolve(file);
+ if(fs::is_regular_file(target)) return target;
+ if(search && file.find_first_of("/\\:")==std::string::npos) {
+  target=resolve("C:/Apps/"+file);
+  if(fs::is_regular_file(target)) return target;
+ }
+ throw std::runtime_error("XSE executable not found");
+}
 bool Drive::command(const std::string& command) {
  if(command!="pwd" && command!="ls" && command!="dir" && command!="cd" &&
  command!="mkdir" && command!="mkfile" && command!="touch" && command!="rmdir" &&
