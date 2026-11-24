@@ -48,12 +48,30 @@ inline xse::InstallResult install_source(const fs::path& apps,const std::string&
  if(stage.empty()) throw std::runtime_error("Cannot create staging directory");
  auto dest=apps/(id+".xse"); bool placed=false;
  try {
-  auto input=fs::absolute(stage/"main.cpp"); auto output=fs::absolute(stage/"app.xse");
-  fs::copy_file(source,input);
+  auto output=fs::absolute(stage/"app.xse");
+  std::vector<std::string> args{"-std=c++17"};
+  if(fs::is_directory(fs::symlink_status(source))) {
+   auto tree=stage/"source"; fs::create_directory(tree);
+   for(const auto& entry:fs::recursive_directory_iterator(source)) {
+    auto status=entry.symlink_status();
+    auto target=tree/entry.path().lexically_relative(source);
+    if(fs::is_directory(status)) fs::create_directory(target);
+    else if(fs::is_regular_file(status)) {
+     fs::copy_file(entry.path(),target);
+     if(target.extension()==".cpp") args.push_back(fs::absolute(target).string());
+    } else throw std::runtime_error("Unsupported source tree entry");
+   }
+  } else {
+   if(!fs::is_regular_file(fs::symlink_status(source))) throw std::runtime_error("Invalid source file");
+   auto input=fs::absolute(stage/"main.cpp"); fs::copy_file(source,input);
+   args.push_back(input.string());
+  }
+  if(args.size()==1) throw std::runtime_error("No C++ source files");
+  args.push_back("-o"); args.push_back(output.string());
 #ifdef _WIN32
-  if(process("g++",{"-std=c++17",input.string(),"-o",output.string()})!=0)
+  if(process("g++",args)!=0)
 #else
-  if(process("c++",{"-std=c++17",input.string(),"-o",output.string()})!=0)
+  if(process("c++",args)!=0)
 #endif
    throw std::runtime_error("XSE compilation failed");
   if(!fs::is_regular_file(fs::symlink_status(output)) || fs::file_size(output)==0) throw std::runtime_error("Compiler produced no executable");
