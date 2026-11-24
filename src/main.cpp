@@ -1,4 +1,5 @@
 #include "com.hpp"
+#include "terminal.hpp"
 #include "filesystem.hpp"
 #include "storage.hpp"
 #include "users.hpp"
@@ -6,6 +7,7 @@
 #include <iostream>
 #include <stdexcept>
 int main(int argc,char** argv) {
+ myos::Terminal terminal;
  try {
   (void)argc;
   const auto root=myos::drive_directory(argv[0]);
