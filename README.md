@@ -4,7 +4,7 @@ XSoft hosts **MyOs**, the C++ successor to PyOs: a lightweight terminal-based ap
 
 ## Build
 
-Requires a C++17 compiler, CMake 3.12+, and **OpenSSL Crypto** development libraries.
+Requires a C++17 compiler, CMake 3.12+, and OpenSSL Crypto development libraries.
 
 ```sh
 cmake -S . -B build
@@ -14,24 +14,44 @@ cmake --build build
 
 On Windows, run the executable produced by the selected CMake generator (for example `build/Debug/xsoft.exe`).
 
-## Standalone XSoft accounts
+## XSoft virtual C: drive
 
-At startup choose `register`, `login`, or `quit`. Registration asks for a username and password. Passwords are salted using cryptographic randomness and hashed with PBKDF2-HMAC-SHA256 (310,000 iterations); plaintext passwords are not saved.
+XSoft creates a **real folder-backed drive** relative to the directory from which you launch the application:
 
-The local account database is stored at `$XDG_DATA_HOME/XSoft/users.db` if XDG_DATA_HOME is set, otherwise `$HOME/XSoft/users.db` on Unix. On Windows it uses `%LOCALAPPDATA%\\XSoft\\users.db` (falling back to USERPROFILE). This is **local, offline authentication**, not a network identity service, and it does not use Replit.
+```text
+./xsoft/
+  C/
+    MyOs/
+      System/
+        Accounts/
+          users.db      (created after registration)
+    Users/
+    Program Files/
+    Temp/
+```
 
-Commands: `whoami` shows the logged-in XSoft user; `logout` returns to the login/register prompt; `reboot` restarts MyOs within XSoft, resets the session, and requires login again; `quit` exits XSoft.
+The MyOs terminal displays `C:\\>` and uses MyOs-style paths. `pwd` displays the virtual path, `cd` navigates within C:, and `ls`, `dir`, `mkdir`, `mkfile`, `touch`, `rmdir`, `rmfile`, and `cat` operate on the folder-backed drive. `reboot` resets the virtual working directory to `C:\\` and returns to login without rebooting the host.
 
-## Current translated subsystems
+For example: `cd Users`, `cd ..`, or `cd C:\\Program Files`. A drive letter other than C: is rejected. Paths attempting to leave C: are rejected; symlinks in user-supplied paths are rejected. This is a **basic path boundary**, not a security boundary against malicious local processes or filesystem race attacks. Do not treat it as a hardened sandbox.
 
-- `src/main.cpp` — host application entry point and in-process MyOs reboot loop
-- `src/com.cpp` — interactive terminal and command router
-- `src/users.cpp` — account registration, login, logout and persistent user database (from PyOs `Home/usr.py`)
-- `src/filesystem.cpp` — `pwd`, `cd`, `ls`, `dir`, `mkdir`, `mkfile`, `touch`, `rmdir`, `rmfile`, `cat`
-- Matching `.hpp` headers keep interfaces separate.
+**Portability note:** The storage location is based on the process's *launch working directory*, not the executable's location. Launch XSoft from the same directory each time to access the same C: drive. Future work can bind storage to the installation directory instead.
 
-**Important:** Filesystem commands currently operate on the host process's working directory and are **not sandboxed**; avoid running XSoft in a sensitive directory. External app commands (`store`, `calc`, `games`, `social`, etc.) are placeholders pending later integration. GUI, BIOS-style startup, and `.xse` support have not been added.
+## Standalone accounts
 
-## Scope
+At startup choose `register`, `login`, or `quit`. Passwords are salted using cryptographic randomness and hashed with PBKDF2-HMAC-SHA256 (310,000 iterations), not saved as plaintext. The account database now resides in `xsoft/C/MyOs/System/Accounts/users.db`, **not** in the previous OS-specific XSoft data directory. Existing accounts in the old directory are **not automatically migrated**. Registration creates a new account in the new drive; do not delete old data before any future migration.
 
-Only PyOs `Home/main.py`, `Home/com.py`, and `Home/usr.py` functionality has been ported so far, with filesystem logic extracted as its own module. The original PyOs source remains untouched.
+`whoami` displays the logged-in XSoft user; `logout` returns to login; `reboot` restarts MyOs in-process and requires login again; `quit` exits.
+
+## Source structure
+
+- `src/main.cpp`: startup, drive initialization, in-process reboot
+- `src/com.cpp`: terminal command routing
+- `src/users.cpp`: XSoft user registration, login, persistent password hashes
+- `src/filesystem.cpp`: virtual C: path resolution, filesystem commands
+- Matching `.hpp` files define interfaces.
+
+External application commands (`store`, `calc`, `games`, `social`, etc.) remain placeholders. GUI, BIOS-style startup, and `.xse` support have not yet been added.
+
+## Verification status
+
+Changes are committed to the development branch and draft pull request. Compilation and end-to-end runtime tests of this latest virtual-drive revision have **not yet been verified**. The previous standalone account implementation was tested before this revision.
