@@ -4,6 +4,7 @@
 #include "users.hpp"
 #include "tictactoe.hpp"
 #include "packages.hpp"
+#include "native_xse.hpp"
 #include <iostream>
 #include <string>
 namespace myos {
@@ -41,6 +42,17 @@ ShellResult run_shell(Users& users,Drive& drive) {
    std::string message; std::getline(std::cin,message);
    std::cout<<message<<'\n'; continue;
   }
+  if(command.rfind("run ",0)==0) {
+   try {
+    auto id=command.substr(4);
+    if(id.size()>4 && id.substr(id.size()-4)==".xse") id.resize(id.size()-4);
+    if(!xse::valid_id(id)) throw std::runtime_error("Invalid application identifier");
+    const auto apps=drive.root()/"Apps";
+    if(std::filesystem::is_symlink(std::filesystem::symlink_status(apps))) throw std::runtime_error("Invalid application directory");
+    std::cout<<"Application exit code: "<<native_xse::launch(apps/(id+".xse"))<<'\n';
+   } catch(const std::exception& e) { std::cout<<"Launch failed: "<<e.what()<<'\n'; }
+   continue;
+  }
   if(command.rfind("install ",0)==0 || command.rfind("uninstall ",0)==0) {
    try {
     const bool installing=command.rfind("install ",0)==0;
@@ -49,11 +61,11 @@ ShellResult run_shell(Users& users,Drive& drive) {
     const auto apps=drive.root()/"Apps";
     if(installing) {
      const auto inbox=drive.root()/"Downloads";
-     const auto source=inbox/(id+".payload");
+     const auto source=inbox/(id+".cpp");
      if(std::filesystem::is_symlink(std::filesystem::symlink_status(inbox)) ||
         !std::filesystem::is_regular_file(std::filesystem::symlink_status(source)))
-      throw std::runtime_error("Prepared payload not found");
-     auto result=xse::install_new(apps,{id,xse::read_package(source)});
+      throw std::runtime_error("Prepared C++ source not found");
+     auto result=native_xse::install_source(apps,id,source);
      std::cout<<"Installed "<<id<<".xse\n";
      if(result.cleanup_error) std::cout<<"Temporary cleanup failed: "<<result.cleanup_error.message()<<'\n';
     } else {
