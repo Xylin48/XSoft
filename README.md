@@ -16,7 +16,7 @@ On Windows, run the executable produced by the selected CMake generator (for exa
 
 ## XSoft virtual C: drive
 
-XSoft creates a **real folder-backed drive** relative to the directory from which you launch the application:
+XSoft creates a **real folder-backed drive** beside the XSoft executable (regardless of your terminal's working directory):
 
 ```text
 ./xsoft/
@@ -34,7 +34,7 @@ The MyOs terminal displays `C:\\>` and uses MyOs-style paths. `pwd` displays the
 
 For example: `cd Users`, `cd ..`, or `cd C:\\Program Files`. A drive letter other than C: is rejected. Paths attempting to leave C: are rejected; symlinks in user-supplied paths are rejected. This is a **basic path boundary**, not a security boundary against malicious local processes or filesystem race attacks. Do not treat it as a hardened sandbox.
 
-**Portability note:** The storage location is based on the process's *launch working directory*, not the executable's location. Launch XSoft from the same directory each time to access the same C: drive. Future work can bind storage to the installation directory instead.
+**Portability note:** The storage location is anchored to the **executable directory**, so launching from another working directory uses the same drive. When using a CMake build, this is beside the built executable (often inside `build/`), not necessarily beside the source checkout. Move the executable and its `xsoft/` directory together to retain its data.
 
 ## Standalone accounts
 
@@ -54,4 +54,14 @@ External application commands (`store`, `calc`, `games`, `social`, etc.) remain 
 
 ## Verification status
 
-Changes are committed to the development branch and draft pull request. Compilation and end-to-end runtime tests of this latest virtual-drive revision have **not yet been verified**. The previous standalone account implementation was tested before this revision.
+Changes are committed to the development branch and draft pull request. A CTest filesystem regression test and a Linux/Windows GitHub Actions build workflow have been added. Their results are not yet confirmed; do not treat this revision as verified until the workflow completes successfully. The previous standalone account implementation was tested before the virtual-drive revision.
+
+## Tests
+
+```sh
+cmake -S . -B build -DBUILD_TESTING=ON
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+Tests cover drive initialization, C: path display, file creation/removal, directory navigation, reboot directory reset, traversal rejection, other-drive rejection, and symlink navigation rejection where supported.
