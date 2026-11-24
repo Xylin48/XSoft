@@ -1,6 +1,8 @@
 #include "com.hpp"
+#include "calculator.hpp"
 #include "filesystem.hpp"
 #include "users.hpp"
+#include "tictactoe.hpp"
 #include <iostream>
 #include <string>
 namespace myos {
@@ -39,7 +41,9 @@ ShellResult run_shell(Users& users,Drive& drive) {
    std::cout<<message<<'\n'; continue;
   }
   if(drive.command(command)) continue;
-  if(command=="calc" || command=="games" || command=="store" ||
+  if(command=="calc") { run_calculator(std::cin,std::cout); continue; }
+  if(command=="games") { run_tictactoe(std::cin,std::cout); continue; }
+  if(command=="store" ||
      command=="social" || command=="firefox" || command=="run" ||
      command=="bash" || command=="edit" || command=="ip" ||
      command=="internet speed") {

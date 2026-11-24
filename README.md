@@ -48,13 +48,18 @@ At startup choose `register`, `login`, or `quit`. Passwords are salted using cry
 - `src/com.cpp`: terminal command routing
 - `src/users.cpp`: XSoft user registration, login, persistent password hashes
 - `src/filesystem.cpp`: virtual C: path resolution, filesystem commands
-- Matching `.hpp` files define interfaces.
+- `src/storage.cpp`: executable-relative drive location and directory initialization
+- `src/calculator.cpp`: native arithmetic calculator
+- `src/tictactoe.cpp`: native Tic-Tac-Toe
 
-External application commands (`store`, `calc`, `games`, `social`, etc.) remain placeholders. GUI, BIOS-style startup, and `.xse` support have not yet been added.
+Matching `.hpp` files define interfaces.
 
-## Verification status
+## Built-in apps
 
-Changes are committed to the development branch and draft pull request. A CTest filesystem regression test and a Linux/Windows GitHub Actions build workflow have been added. Their results are not yet confirmed; do not treat this revision as verified until the workflow completes successfully. The previous standalone account implementation was tested before the virtual-drive revision.
+- `calc` evaluates one decimal equation and returns to MyOs. It supports parentheses, scientific notation, unary signs, `+`, `-`, `*`, `/`, `//`, `%`, and `**` using floating-point arithmetic.
+- `games` opens Tic-Tac-Toe with a random-move bot and a local two-player mode. Enter a square number followed by Enter. Enter `0` during a match to return to the game menu, or `0` at the menu to return to MyOs.
+
+Both apps are built in and run offline. `store`, `social`, and external app launching remain pending, along with GUI, BIOS-style startup, and `.xse` support.
 
 ## Tests
 

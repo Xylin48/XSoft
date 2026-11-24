@@ -3,7 +3,9 @@ project(XSoft LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(OpenSSL REQUIRED COMPONENTS Crypto)
-add_executable(xsoft src/main.cpp src/com.cpp src/users.cpp src/filesystem.cpp src/storage.cpp)
+add_executable(xsoft
+ src/main.cpp src/com.cpp src/users.cpp src/filesystem.cpp src/storage.cpp
+ src/calculator.cpp src/tictactoe.cpp)
 target_link_libraries(xsoft PRIVATE OpenSSL::Crypto)
 if(MSVC)
  target_compile_options(xsoft PRIVATE /W4)
