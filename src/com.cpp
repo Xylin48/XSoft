@@ -42,14 +42,13 @@ ShellResult run_shell(Users& users,Drive& drive) {
    std::string message; std::getline(std::cin,message);
    std::cout<<message<<'\n'; continue;
   }
-  if(command.rfind("run ",0)==0) {
+  const bool run_command=command.rfind("run ",0)==0;
+  const bool direct_xse=command.size()>4 && command.substr(command.size()-4)==".xse";
+  if(run_command || direct_xse) {
    try {
-    auto id=command.substr(4);
-    if(id.size()>4 && id.substr(id.size()-4)==".xse") id.resize(id.size()-4);
-    if(!xse::valid_id(id)) throw std::runtime_error("Invalid application identifier");
-    const auto apps=drive.root()/"Apps";
-    if(std::filesystem::is_symlink(std::filesystem::symlink_status(apps))) throw std::runtime_error("Invalid application directory");
-    std::cout<<"Application exit code: "<<native_xse::launch(apps/(id+".xse"))<<'\n';
+    const auto target=drive.executable(run_command?command.substr(4):command,run_command);
+    const int status=native_xse::launch(target);
+    if(status!=0) std::cout<<"Application exit code: "<<status<<'\n';
    } catch(const std::exception& e) { std::cout<<"Launch failed: "<<e.what()<<'\n'; }
    continue;
   }
