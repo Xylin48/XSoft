@@ -24,7 +24,7 @@ if(BUILD_TESTING)
 endif()
 
 if(BUILD_TESTING)
- add_executable(xsoft_xse_tests tests/xse_tests.cpp)
+ add_executable(xsoft_xse_tests tests/xse_tests.cpp src/filesystem.cpp src/storage.cpp)
  target_link_libraries(xsoft_xse_tests PRIVATE OpenSSL::Crypto)
  add_test(NAME xsoft_xse COMMAND xsoft_xse_tests)
 endif()
