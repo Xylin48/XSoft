@@ -60,9 +60,10 @@ ShellResult run_shell(Users& users,Drive& drive) {
     const auto apps=drive.root()/"Apps";
     if(installing) {
      const auto inbox=drive.root()/"Downloads";
-     const auto source=inbox/(id+".cpp");
+     auto source=inbox/id;
+     if(!std::filesystem::is_directory(std::filesystem::symlink_status(source))) source=inbox/(id+".cpp");
      if(std::filesystem::is_symlink(std::filesystem::symlink_status(inbox)) ||
-        !std::filesystem::is_regular_file(std::filesystem::symlink_status(source)))
+        (!std::filesystem::is_regular_file(std::filesystem::symlink_status(source)) && !std::filesystem::is_directory(std::filesystem::symlink_status(source))))
       throw std::runtime_error("Prepared C++ source not found");
      auto result=native_xse::install_source(apps,id,source);
      std::cout<<"Installed "<<id<<".xse\n";
