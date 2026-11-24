@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <fstream>
 #include "installer.hpp"
 #ifdef _WIN32
 #include <process.h>
@@ -13,18 +14,21 @@
 #endif
 namespace myos::native_xse {
 namespace fs=std::filesystem;
-inline int process(const std::string& executable,const std::vector<std::string>& args) {
+inline int process(const std::string& executable,const std::vector<std::string>& args,const fs::path& cwd={}) {
  std::vector<const char*> argv{executable.c_str()};
  for(const auto& arg:args) argv.push_back(arg.c_str());
  argv.push_back(nullptr);
 #ifdef _WIN32
+ auto previous=fs::current_path();
+ if(!cwd.empty()) fs::current_path(cwd);
  auto status=_spawnvp(_P_WAIT,executable.c_str(),argv.data());
+ if(!cwd.empty()) fs::current_path(previous);
  if(status==-1) throw std::runtime_error("Cannot start process");
  return static_cast<int>(status);
 #else
  std::vector<char*> av; for(auto p:argv) av.push_back(const_cast<char*>(p));
  auto pid=fork(); if(pid<0) throw std::runtime_error("Cannot fork process");
- if(pid==0){execvp(executable.c_str(),av.data());_exit(127);}
+ if(pid==0){if(!cwd.empty() && chdir(cwd.c_str())!=0)_exit(126);execvp(executable.c_str(),av.data());_exit(127);}
  int status=0; while(waitpid(pid,&status,0)<0){if(errno!=EINTR)throw std::runtime_error("Cannot wait for process");}
  return WIFEXITED(status)?WEXITSTATUS(status):128;
 #endif
@@ -32,7 +36,8 @@ inline int process(const std::string& executable,const std::vector<std::string>&
 inline int launch(const fs::path& executable) {
  if(executable.extension()!=".xse" || !fs::is_regular_file(fs::symlink_status(executable)))
   throw std::runtime_error("XSE executable not found");
- return process(fs::absolute(executable).string(),{});
+ auto path=fs::absolute(executable);
+ return process(path.string(),{},path.parent_path());
 }
 inline xse::InstallResult install_source(const fs::path& apps,const std::string& id,const fs::path& source) {
  if(!xse::valid_id(id)) throw std::runtime_error("Invalid application identifier");
@@ -51,6 +56,7 @@ inline xse::InstallResult install_source(const fs::path& apps,const std::string&
   if(process("c++",{"-std=c++17",input.string(),"-o",output.string()})!=0)
 #endif
    throw std::runtime_error("XSE compilation failed");
+  if(!fs::is_regular_file(fs::symlink_status(output)) || fs::file_size(output)==0) throw std::runtime_error("Compiler produced no executable");
   fs::create_hard_link(output,dest); placed=true;
   if(!fs::is_regular_file(fs::symlink_status(dest))) throw std::runtime_error("Placement failed");
  } catch(...) {
