@@ -12,11 +12,11 @@ void help() {
  "games, calc, store, social, ip, internet speed\n";
 }
 }
-ShellResult run_shell(Users& users) {
+ShellResult run_shell(Users& users,Drive& drive) {
  banner();
  if(!users.authenticate()) return ShellResult::Shutdown;
  for(;;) {
-  std::cout<<"\n>>> "<<std::flush;
+  std::cout<<"\n"<<drive.cwd_display()<<"> "<<std::flush;
   std::string command;
   if(!std::getline(std::cin,command)) return ShellResult::Shutdown;
   const auto first=command.find_first_not_of(" \t\r\n");
@@ -26,7 +26,7 @@ ShellResult run_shell(Users& users) {
   if(command=="quit") return ShellResult::Shutdown;
   if(command=="reboot") { users.logout(); return ShellResult::Reboot; }
   if(command=="logout") {
-   users.logout();
+   users.logout(); drive.reset();
    if(!users.authenticate()) return ShellResult::Shutdown;
    continue;
   }
@@ -38,7 +38,7 @@ ShellResult run_shell(Users& users) {
    std::string message; std::getline(std::cin,message);
    std::cout<<message<<'\n'; continue;
   }
-  if(handle_filesystem_command(command)) continue;
+  if(drive.command(command)) continue;
   if(command=="calc" || command=="games" || command=="store" ||
      command=="social" || command=="firefox" || command=="run" ||
      command=="bash" || command=="edit" || command=="ip" ||
