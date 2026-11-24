@@ -12,7 +12,7 @@ void banner() { std::cout<<"\nXSoft - MyOs\nPrograms and games hub\n"; }
 void help() {
  std::cout<<"help, quit, reboot, logout, whoami, clear, echo, pwd, cd, ls, dir, "
  "mkdir, mkfile, touch, rmdir, rmfile, cat, run, bash, edit, firefox, "
- "games, calc, apps, store, social, ip, internet speed\n";
+ "games, calc, apps, install, uninstall, store, social, ip, internet speed\n";
 }
 }
 ShellResult run_shell(Users& users,Drive& drive) {
@@ -40,6 +40,31 @@ ShellResult run_shell(Users& users,Drive& drive) {
    std::cout<<":"<<std::flush;
    std::string message; std::getline(std::cin,message);
    std::cout<<message<<'\n'; continue;
+  }
+  if(command.rfind("install ",0)==0 || command.rfind("uninstall ",0)==0) {
+   try {
+    const bool installing=command.rfind("install ",0)==0;
+    const auto id=command.substr(installing?8:10);
+    if(!xse::valid_id(id)) throw std::runtime_error("Invalid application identifier");
+    const auto apps=drive.root()/"Apps";
+    if(installing) {
+     const auto inbox=drive.root()/"Downloads";
+     const auto source=inbox/(id+".payload");
+     if(std::filesystem::is_symlink(std::filesystem::symlink_status(inbox)) ||
+        !std::filesystem::is_regular_file(std::filesystem::symlink_status(source)))
+      throw std::runtime_error("Prepared payload not found");
+     auto result=xse::install_new(apps,{id,xse::read_package(source)});
+     std::cout<<"Installed "<<id<<".xse\n";
+     if(result.cleanup_error) std::cout<<"Temporary cleanup failed: "<<result.cleanup_error.message()<<'\n';
+    } else {
+     const auto installed=xse::installed_packages(apps);
+     const auto it=std::find_if(installed.begin(),installed.end(),[&](const auto& p){return p.id==id;});
+     if(it==installed.end()) throw std::runtime_error("Application not installed");
+     if(!std::filesystem::remove(it->path)) throw std::runtime_error("Package removal failed");
+     std::cout<<"Removed "<<id<<".xse\n";
+    }
+   } catch(const std::exception& e) { std::cout<<"Package operation failed: "<<e.what()<<'\n'; }
+   continue;
   }
   if(command=="apps") {
    try {
