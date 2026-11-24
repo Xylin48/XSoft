@@ -28,3 +28,10 @@ if(BUILD_TESTING)
  target_link_libraries(xsoft_xse_tests PRIVATE OpenSSL::Crypto)
  add_test(NAME xsoft_xse COMMAND xsoft_xse_tests)
 endif()
+
+add_executable(xsoft_store src/store_main.cpp src/storage.cpp)
+set_target_properties(xsoft_store PROPERTIES OUTPUT_NAME store SUFFIX ".xse")
+add_dependencies(xsoft xsoft_store)
+add_custom_command(TARGET xsoft POST_BUILD
+ COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:xsoft>/xsoft/C/apps"
+ COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:xsoft_store>" "$<TARGET_FILE_DIR:xsoft>/xsoft/C/apps/store.xse")
