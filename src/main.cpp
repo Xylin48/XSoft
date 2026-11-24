@@ -1,30 +1,23 @@
 #include "com.hpp"
+#include "filesystem.hpp"
 #include "users.hpp"
-#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
-namespace {
-std::filesystem::path data_directory() {
-#ifdef _WIN32
- const char* base=std::getenv("LOCALAPPDATA");
- if(!base || !*base) base=std::getenv("USERPROFILE");
-#else
- const char* base=std::getenv("XDG_DATA_HOME");
- if(!base || !*base) base=std::getenv("HOME");
-#endif
- if(!base || !*base) throw std::runtime_error("No user data directory available");
- return std::filesystem::path(base)/"XSoft";
-}
-}
 int main() {
  try {
-  const auto startup_directory=std::filesystem::current_path();
-  myos::Users users(data_directory());
+  // A portable installation: the xsoft/C drive lives in the launch directory.
+  const auto root=std::filesystem::current_path()/"xsoft"/"C";
+  myos::Drive drive(root);
+  std::filesystem::create_directories(drive.root()/"MyOs"/"System"/"Accounts");
+  std::filesystem::create_directories(drive.root()/"Users");
+  std::filesystem::create_directories(drive.root()/"Program Files");
+  std::filesystem::create_directories(drive.root()/"Temp");
+  myos::Users users(drive.root()/"MyOs"/"System"/"Accounts");
   for(;;) {
-   std::filesystem::current_path(startup_directory);
+   drive.reset();
    std::cout<<"XSoft - booting MyOs\n";
-   const auto result=myos::run_shell(users);
+   const auto result=myos::run_shell(users,drive);
    if(result==myos::ShellResult::Shutdown) return 0;
    std::cout<<"MyOs: rebooting...\n";
   }
