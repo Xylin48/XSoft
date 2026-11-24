@@ -5,6 +5,7 @@
 #include "tictactoe.hpp"
 #include "packages.hpp"
 #include "native_xse.hpp"
+#include "store.hpp"
 #include <iostream>
 #include <string>
 namespace myos {
@@ -13,7 +14,7 @@ void banner() { std::cout<<"\nXSoft - MyOs\nPrograms and games hub\n"; }
 void help() {
  std::cout<<"help, quit, reboot, logout, whoami, clear, echo, pwd, cd, ls, dir, "
  "mkdir, mkfile, touch, rmdir, rmfile, cat, run, bash, edit, firefox, "
- "games, calc, apps, install, uninstall, store, social, ip, internet speed\n";
+ "games, calc, apps, uninstall, store, social, ip, internet speed\n";
 }
 }
 ShellResult run_shell(Users& users,Drive& drive) {
@@ -52,30 +53,25 @@ ShellResult run_shell(Users& users,Drive& drive) {
    } catch(const std::exception& e) { std::cout<<"Launch failed: "<<e.what()<<'\n'; }
    continue;
   }
-  if(command.rfind("install ",0)==0 || command.rfind("uninstall ",0)==0) {
+  if(command=="store" || command.rfind("store ",0)==0) {
    try {
-    const bool installing=command.rfind("install ",0)==0;
-    const auto id=command.substr(installing?8:10);
+    std::string id;
+    if(command=="store") { std::cout<<"Application name (blank to cancel): "<<std::flush; if(!std::getline(std::cin,id)||id.empty()) continue; }
+    else id=command.substr(6);
+    auto result=store::download(drive.root(),id);
+    std::cout<<"Installed "<<id<<".xse\n";
+    if(result.cleanup_error) std::cout<<"Temporary cleanup failed: "<<result.cleanup_error.message()<<'\n';
+   } catch(const std::exception& e) { std::cout<<"Store error: "<<e.what()<<'\n'; }
+   continue;
+  }
+  if(command.rfind("uninstall ",0)==0) {
+   try {
+    const auto id=command.substr(10);
     if(!xse::valid_id(id)) throw std::runtime_error("Invalid application identifier");
-    const auto apps=drive.root()/"Apps";
-    if(installing) {
-     const auto inbox=drive.root()/"Downloads";
-     auto source=inbox/id;
-     if(!std::filesystem::is_directory(std::filesystem::symlink_status(source))) source=inbox/(id+".cpp");
-     if(std::filesystem::is_symlink(std::filesystem::symlink_status(inbox)) ||
-        (!std::filesystem::is_regular_file(std::filesystem::symlink_status(source)) && !std::filesystem::is_directory(std::filesystem::symlink_status(source))))
-      throw std::runtime_error("Prepared C++ source not found");
-     auto result=native_xse::install_source(apps,id,source);
-     std::cout<<"Installed "<<id<<".xse\n";
-     if(result.cleanup_error) std::cout<<"Temporary cleanup failed: "<<result.cleanup_error.message()<<'\n';
-    } else {
-     const auto installed=xse::installed_packages(apps);
-     const auto it=std::find_if(installed.begin(),installed.end(),[&](const auto& p){return p.id==id;});
-     if(it==installed.end()) throw std::runtime_error("Application not installed");
-     if(!std::filesystem::remove(it->path)) throw std::runtime_error("Package removal failed");
-     std::cout<<"Removed "<<id<<".xse\n";
-    }
-   } catch(const std::exception& e) { std::cout<<"Package operation failed: "<<e.what()<<'\n'; }
+    const auto target=drive.executable("C:/Apps/"+id+".xse",false);
+    if(!std::filesystem::remove(target)) throw std::runtime_error("Removal failed");
+    std::cout<<"Removed "<<id<<".xse\n";
+   } catch(const std::exception& e) { std::cout<<"Removal failed: "<<e.what()<<'\n'; }
    continue;
   }
   if(command=="apps") {
@@ -89,8 +85,7 @@ ShellResult run_shell(Users& users,Drive& drive) {
   if(drive.command(command)) continue;
   if(command=="calc") { run_calculator(std::cin,std::cout); continue; }
   if(command=="games") { run_tictactoe(std::cin,std::cout); continue; }
-  if(command=="store" ||
-     command=="social" || command=="firefox" || command=="run" ||
+  if(command=="social" || command=="firefox" || command=="run" ||
      command=="bash" || command=="edit" || command=="ip" ||
      command=="internet speed") {
    std::cout<<command<<" is not integrated yet.\n"; continue;
