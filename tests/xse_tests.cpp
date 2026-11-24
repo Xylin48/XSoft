@@ -14,13 +14,13 @@ int main(){
   auto require=[](bool ok){if(!ok)throw std::runtime_error("Assertion failed");};
   auto rejects=[&](auto fn){bool rejected=false;try{fn();}catch(const std::exception&){rejected=true;}require(rejected);};
   auto source=root/"demo.cpp"; std::ofstream(source)<<"int main(){return 23;}";
-  auto apps=root/"Apps";
+  auto apps=root/"apps";
   auto result=native_xse::install_source(apps,"demo",source);
   require(!result.cleanup_error && native_xse::launch(result.installed)==23);
   require(xse::installed_packages(apps).size()==1);
   Drive drive(root);
   require(drive.executable("demo",true)==result.installed);
-  require(drive.executable("C:/Apps/demo.xse",false)==result.installed);
+  require(drive.executable("C:/apps/demo.xse",false)==result.installed);
   rejects([&]{drive.executable("../demo",true);});
   rejects([&]{native_xse::install_source(apps,"demo",source);});
   std::ofstream(source)<<"not valid C++";
@@ -30,6 +30,9 @@ int main(){
   fs::rename(result.installed,root/"demo.xse");
   require(drive.executable("demo.xse",false)==root/"demo.xse");
   require(native_xse::launch(drive.executable("demo",true))==23);
+  fs::create_directory(root/"Other");
+  fs::rename(root/"demo.xse",root/"Other"/"demo.xse");
+  require(drive.executable("demo",true)==root/"Other"/"demo.xse");
   fs::remove_all(root);return 0;
  }catch(const std::exception& e){std::cerr<<e.what()<<'\n';std::error_code ec;if(!root.empty())fs::remove_all(root,ec);return 1;}
 }
