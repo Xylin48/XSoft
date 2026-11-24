@@ -12,8 +12,9 @@ int main(int argc,char** argv) {
    if(!std::getline(std::cin,choice)||choice=="5") return 0;
    try {
     if(choice=="1") {
-     if(myos::native_xse::process("git",{"ls-remote","--heads","https://github.com/Xylin48/Store.git"})!=0)
-      throw std::runtime_error("Cannot retrieve Store catalog");
+     auto names=myos::store::catalog(root);
+     if(names.empty()) std::cout<<"No applications available.\n";
+     for(const auto& name:names) std::cout<<name<<'\n';
     } else if(choice=="2") {
      std::cout<<"Application name: "<<std::flush;
      if(!std::getline(std::cin,id)) return 0;
