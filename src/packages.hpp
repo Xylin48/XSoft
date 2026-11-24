@@ -1,5 +1,6 @@
 #pragma once
 #include "installer.hpp"
+#include <vector>
 namespace myos::xse {
 struct InstalledPackage { std::string id; fs::path path; };
 inline std::vector<InstalledPackage> installed_packages(const fs::path& apps) {
