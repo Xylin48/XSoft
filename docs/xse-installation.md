@@ -1,30 +1,13 @@
-# XSE installation lifecycle
+# XSE executables
+An XSE is a native executable, not an archive. MyOs launches it directly using the host process API. No registry is required.
 
-XSoft generates XSE packages locally from downloaded Store branch contents. The Store does not need to distribute prebuilt XSE files. MyOs launches installed packages through the XSE runtime.
+- Type `calc.xse` in its directory.
+- Type `run calc` to search the current directory and then C:/Apps.
+- Explicit virtual paths work with run.
+- The application starts in its executable directory.
 
-## Transaction
+Local installation currently accepts a trusted single C++17 source in C:/Downloads/<id>.cpp. It copies the source into a unique staging directory, compiles to app.xse, publishes without replacing an existing executable, and removes the staging directory. Original local input is retained. Store-owned downloads must be cleaned by the Store integration after successful placement.
 
-1. Download into a unique installer-owned staging directory.
-2. Validate manifest, package identity, paths and resources. Reject paths escaping staging and unsupported package formats.
-3. Prepare application files and dependencies inside staging.
-4. Generate the XSE locally, after preparation and before permanent placement.
-5. Verify the generated package, then place it in the virtual C: drive using a same-filesystem rename where possible.
-6. Verify permanent placement and commit the application registry entry. Retain the previous installed version until the transaction succeeds.
-7. Remove installer-owned temporary downloads, extracted files and intermediate build artifacts. Never remove permanent resources or user data.
+Linux uses c++; Windows currently uses g++ and the native process API. A host compiler and hard-link-capable filesystem are required. Native programs execute with host account permissions; the virtual drive is not a process sandbox.
 
-On failure, roll back incomplete placement and registry changes, preserve the previous installed version, and clean only the staging directory owned by this transaction. Cleanup failures must be reported and retried without deleting unrelated paths. Do not follow symlinks during cleanup. An interrupted installation must be recoverable.
-
-## Implementation boundaries
-
-The package generator, package manager, and runtime belong to XSoft; Store retrieval is a separate input provider. The package binary layout, manifest schema, execution ABI and permanent directory layout remain to be finalized against existing PyOs behavior. Do not treat an arbitrary downloaded native executable as a validated XSE.
-
-## Acceptance tests
-
-- Successful install generates XSE before placement and leaves no temporary files.
-- Failed generation or verification leaves no installed partial package.
-- Failed update preserves the prior installed package and user data.
-- Registry failure rolls back placement.
-- Cleanup never removes unrelated files, permanent resources, or user data.
-- Interrupted installation can be recovered on next startup.
-- Local installation works without Store access once input files are available.
-- Windows and Linux builds exercise the same lifecycle.
+Remote Store retrieval, multi-file builds, updates and interrupted-install recovery are not implemented by this local installer. Regression tests cover compilation, launch, lookup, relocation, duplicate rejection and failed-build cleanup.
