@@ -84,8 +84,15 @@ fs::path Drive::executable(const std::string& name,bool search) const {
  auto target=resolve(file);
  if(fs::is_regular_file(target)) return target;
  if(search && file.find_first_of("/\\:")==std::string::npos) {
-  target=resolve("C:/Apps/"+file);
+  target=resolve("C:/apps/"+file);
   if(fs::is_regular_file(target)) return target;
+  std::vector<fs::path> matches;
+  for(const auto& entry:fs::recursive_directory_iterator(root_,fs::directory_options::skip_permission_denied)) {
+   if(entry.path().filename()==file && fs::is_regular_file(entry.symlink_status()))
+    matches.push_back(entry.path());
+  }
+  std::sort(matches.begin(),matches.end());
+  if(!matches.empty()) return resolve("C:/"+matches.front().lexically_relative(root_).generic_string());
  }
  throw std::runtime_error("XSE executable not found");
 }
