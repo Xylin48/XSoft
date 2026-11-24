@@ -3,6 +3,7 @@
 #include "filesystem.hpp"
 #include "users.hpp"
 #include "tictactoe.hpp"
+#include "packages.hpp"
 #include <iostream>
 #include <string>
 namespace myos {
@@ -11,7 +12,7 @@ void banner() { std::cout<<"\nXSoft - MyOs\nPrograms and games hub\n"; }
 void help() {
  std::cout<<"help, quit, reboot, logout, whoami, clear, echo, pwd, cd, ls, dir, "
  "mkdir, mkfile, touch, rmdir, rmfile, cat, run, bash, edit, firefox, "
- "games, calc, store, social, ip, internet speed\n";
+ "games, calc, apps, store, social, ip, internet speed\n";
 }
 }
 ShellResult run_shell(Users& users,Drive& drive) {
@@ -39,6 +40,14 @@ ShellResult run_shell(Users& users,Drive& drive) {
    std::cout<<":"<<std::flush;
    std::string message; std::getline(std::cin,message);
    std::cout<<message<<'\n'; continue;
+  }
+  if(command=="apps") {
+   try {
+    const auto apps=xse::installed_packages(drive.root()/"Apps");
+    for(const auto& app:apps) std::cout<<app.id<<'\n';
+    if(apps.empty()) std::cout<<"No installed XSE applications.\n";
+   } catch(const std::exception& e) { std::cout<<"Application discovery failed: "<<e.what()<<'\n'; }
+   continue;
   }
   if(drive.command(command)) continue;
   if(command=="calc") { run_calculator(std::cin,std::cout); continue; }
