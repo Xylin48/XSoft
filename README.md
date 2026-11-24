@@ -1,10 +1,10 @@
-# XSoft
+# XSoft / MyOs
 
-XSoft hosts **MyOs**, the successor to PyOs: a lightweight application and game hub.
+XSoft hosts **MyOs**, the C++ successor to PyOs: a lightweight terminal-based application and game hub. This is a work-in-progress port, not a PC emulator or graphical desktop.
 
-Initial port scope: only `Home/main.py` and `Home/com.py` from `Xylin48/PyOs`, translated into C++ (`src/main.cpp` and `src/com.cpp`). No BIOS, GUI, Store implementation, or other PyOs files are ported in this change.
+## Build
 
-Build (C++17):
+Requires a C++17 compiler, CMake 3.12+, and OpenSSL Crypto development libraries.
 
 ```sh
 cmake -S . -B build
@@ -12,4 +12,61 @@ cmake --build build
 ./build/xsoft
 ```
 
-The current prototype runs in a host terminal. The `reboot` command restarts the MyOs command session, never the host computer. Commands launching unported Python apps report that those applications are not yet integrated.
+On Windows, run the executable produced by the selected CMake generator (for example `build/Debug/xsoft.exe`).
+
+## XSoft virtual C: drive
+
+XSoft creates a **real folder-backed drive** beside the XSoft executable (regardless of your terminal's working directory):
+
+```text
+./xsoft/
+  C/
+    MyOs/
+      System/
+        Accounts/
+          users.db      (created after registration)
+    Users/
+    Program Files/
+    Temp/
+```
+
+The MyOs terminal displays `C:\\>` and uses MyOs-style paths. `pwd` displays the virtual path, `cd` navigates within C:, and `ls`, `dir`, `mkdir`, `mkfile`, `touch`, `rmdir`, `rmfile`, and `cat` operate on the folder-backed drive. `reboot` resets the virtual working directory to `C:\\` and returns to login without rebooting the host.
+
+For example: `cd Users`, `cd ..`, or `cd C:\\Program Files`. A drive letter other than C: is rejected. Paths attempting to leave C: are rejected; symlinks in user-supplied paths are rejected. This is a **basic path boundary**, not a security boundary against malicious local processes or filesystem race attacks. Do not treat it as a hardened sandbox.
+
+**Portability note:** The storage location is anchored to the **executable directory**, so launching from another working directory uses the same drive. When using a CMake build, this is beside the built executable (often inside `build/`), not necessarily beside the source checkout. Move the executable and its `xsoft/` directory together to retain its data.
+
+## Standalone accounts
+
+At startup choose `register`, `login`, or `quit`. Passwords are salted using cryptographic randomness and hashed with PBKDF2-HMAC-SHA256 (310,000 iterations), not saved as plaintext. The account database now resides in `xsoft/C/MyOs/System/Accounts/users.db`, **not** in the previous OS-specific XSoft data directory. Existing accounts in the old directory are **not automatically migrated**. Registration creates a new account in the new drive; do not delete old data before any future migration.
+
+`whoami` displays the logged-in XSoft user; `logout` returns to login; `reboot` restarts MyOs in-process and requires login again; `quit` exits.
+
+## Source structure
+
+- `src/main.cpp`: startup, drive initialization, in-process reboot
+- `src/com.cpp`: terminal command routing
+- `src/users.cpp`: XSoft user registration, login, persistent password hashes
+- `src/filesystem.cpp`: virtual C: path resolution, filesystem commands
+- `src/storage.cpp`: executable-relative drive location and directory initialization
+- `src/calculator.cpp`: native arithmetic calculator
+- `src/tictactoe.cpp`: native Tic-Tac-Toe
+
+Matching `.hpp` files define interfaces.
+
+## Built-in apps
+
+- `calc` evaluates one decimal equation and returns to MyOs. It supports parentheses, scientific notation, unary signs, `+`, `-`, `*`, `/`, `//`, `%`, and `**` using floating-point arithmetic.
+- `games` opens Tic-Tac-Toe with a random-move bot and a local two-player mode. Enter a square number followed by Enter. Enter `0` during a match to return to the game menu, or `0` at the menu to return to MyOs.
+
+Both apps are built in and run offline. `store`, `social`, and external app launching remain pending, along with GUI, BIOS-style startup, and `.xse` support.
+
+## Tests
+
+```sh
+cmake -S . -B build -DBUILD_TESTING=ON
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+Tests cover drive initialization, C: path display, file creation/removal, directory navigation, reboot directory reset, traversal rejection, other-drive rejection, and symlink navigation rejection where supported.

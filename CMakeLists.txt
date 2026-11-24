@@ -1,0 +1,37 @@
+cmake_minimum_required(VERSION 3.12)
+project(XSoft LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+find_package(OpenSSL REQUIRED COMPONENTS Crypto)
+add_executable(xsoft
+ src/main.cpp src/com.cpp src/users.cpp src/filesystem.cpp src/storage.cpp
+ src/calculator.cpp src/tictactoe.cpp)
+target_link_libraries(xsoft PRIVATE OpenSSL::Crypto)
+if(MSVC)
+ target_compile_options(xsoft PRIVATE /W4)
+else()
+ target_compile_options(xsoft PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+include(CTest)
+if(BUILD_TESTING)
+ add_executable(xsoft_drive_tests tests/drive_tests.cpp src/filesystem.cpp src/storage.cpp)
+ if(MSVC)
+  target_compile_options(xsoft_drive_tests PRIVATE /W4)
+ else()
+  target_compile_options(xsoft_drive_tests PRIVATE -Wall -Wextra -Wpedantic)
+ endif()
+ add_test(NAME xsoft_drive COMMAND xsoft_drive_tests)
+endif()
+
+if(BUILD_TESTING)
+ add_executable(xsoft_xse_tests tests/xse_tests.cpp src/filesystem.cpp src/storage.cpp)
+ target_link_libraries(xsoft_xse_tests PRIVATE OpenSSL::Crypto)
+ add_test(NAME xsoft_xse COMMAND xsoft_xse_tests)
+endif()
+
+add_executable(xsoft_store src/store_main.cpp src/storage.cpp)
+set_target_properties(xsoft_store PROPERTIES OUTPUT_NAME store SUFFIX ".xse")
+add_dependencies(xsoft xsoft_store)
+add_custom_command(TARGET xsoft POST_BUILD
+ COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:xsoft>/xsoft/C/apps"
+ COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:xsoft_store>" "$<TARGET_FILE_DIR:xsoft>/xsoft/C/apps/store.xse")
